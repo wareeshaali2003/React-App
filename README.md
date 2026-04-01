@@ -59,10 +59,3 @@ auth with automatic CSRF token management. Deployed as a static
 build on the same domain as ERPNext, with Nginx serving the 
 React app independently from the ERP backend.
 ```
-
----
-
-## Topics/Tags (GitHub repo ke liye):
-```
-react typescript vite erpnext frappe hrms employee-self-service 
-rest-api axios react-router typescript-react
