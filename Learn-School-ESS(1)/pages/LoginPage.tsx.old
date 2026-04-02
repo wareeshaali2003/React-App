@@ -1,0 +1,56 @@
+import React, { useState } from "react";
+import { useAuth } from "../auth/AuthContext";
+import { Navigate } from "react-router-dom";
+
+export const LoginPage: React.FC = () => {
+  const { mode, authed, loginDev, loading } = useAuth();
+
+  const [usr, setUsr] = useState("");
+  const [pwd, setPwd] = useState("");
+  const [err, setErr] = useState<string | null>(null);
+
+  // In prod, never show login page
+  if (mode === "prod") return <Navigate to="/" replace />;
+  if (authed) return <Navigate to="/" replace />;
+
+  const onSubmit = async () => {
+    setErr(null);
+    const res = await loginDev(usr.trim(), pwd);
+    if (!res.ok) setErr(res.error || "Login failed");
+  };
+
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
+      <div className="bg-white rounded-2xl shadow p-6 w-full max-w-md space-y-4">
+        <div className="text-2xl font-bold">Local Dev Login</div>
+        <div className="text-sm text-gray-500">
+          Login via ERPNext API (<code>/api/method/login</code>)
+        </div>
+
+        <input
+          className="w-full border rounded-xl px-4 py-2"
+          value={usr}
+          onChange={(e) => setUsr(e.target.value)}
+          placeholder="employee email"
+        />
+        <input
+          type="password"
+          className="w-full border rounded-xl px-4 py-2"
+          value={pwd}
+          onChange={(e) => setPwd(e.target.value)}
+          placeholder="password"
+        />
+
+        <button
+          className="w-full bg-green-600 text-white rounded-xl py-2 disabled:opacity-60"
+          disabled={loading}
+          onClick={onSubmit}
+        >
+          {loading ? "Logging in..." : "Login"}
+        </button>
+
+        {err ? <div className="text-sm text-red-600">{err}</div> : null}
+      </div>
+    </div>
+  );
+};

@@ -1,0 +1,60 @@
+import React from "react";
+import { HashRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import { Layout } from "./components/Layout";
+import { Dashboard } from "./pages/Dashboard";
+import { LeavePage } from "./pages/LeavePage";
+import { AttendancePage } from "./pages/AttendancePage";
+import { SalarySlipPage } from "./pages/SalarySlipPage";
+import { ProfilePage } from "./pages/ProfilePage";
+import { DirectoryPage } from "./pages/DirectoryPage";
+import { LoginPage } from "./pages/LoginPage";
+
+import { AuthProvider, useAuth } from "./auth/AuthContext";
+
+const Protected: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { loading, authed, mode } = useAuth();
+
+  if (loading) return <div className="p-4">Loading...</div>;
+
+  // In dev, if not authed -> go login
+  if (mode === "dev" && !authed) return <Navigate to="/login" replace />;
+
+  // In prod, if not authed -> user probably not logged into ERPNext
+  // You can redirect to ERPNext login or show message; for now:
+  if (mode === "prod" && !authed) return <div className="p-4">Please login to ERPNext first.</div>;
+
+  return <>{children}</>;
+};
+
+const App: React.FC = () => {
+  return (
+    <AuthProvider>
+      <Router>
+        <Routes>
+          <Route path="/login" element={<LoginPage />} />
+
+          <Route
+            path="/*"
+            element={
+              <Protected>
+                <Layout>
+                  <Routes>
+                    <Route path="/" element={<Dashboard />} />
+                    <Route path="/leave" element={<LeavePage />} />
+                    <Route path="/attendance" element={<AttendancePage />} />
+                    <Route path="/salary-slip" element={<SalarySlipPage />} />
+                    <Route path="/profile" element={<ProfilePage />} />
+                    <Route path="/directory" element={<DirectoryPage />} />
+                    <Route path="*" element={<Navigate to="/" replace />} />
+                  </Routes>
+                </Layout>
+              </Protected>
+            }
+          />
+        </Routes>
+      </Router>
+    </AuthProvider>
+  );
+};
+
+export default App;

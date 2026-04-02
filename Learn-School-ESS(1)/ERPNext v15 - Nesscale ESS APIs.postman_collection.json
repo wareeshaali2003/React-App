@@ -1,0 +1,473 @@
+{
+  "info": {
+    "_postman_id": "9a90af23-79a2-4128-977a-f7502f241b50",
+    "name": "ERPNext v15 - Nesscale ESS APIs",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "391284",
+    "_collection_link": "https://go.postman.co/collection/391284-9a90af23-79a2-4128-977a-f7502f241b50?source=collection_link"
+  },
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Who Am I (Token Test)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/method/frappe.auth.get_logged_user",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "method",
+                "frappe.auth.get_logged_user"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Login API",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{auth_token}}",
+                "disabled": true
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "usr",
+                  "value": "wahaj@learnschoolacademy.com",
+                  "type": "text",
+                  "uuid": "803af9d2-2cc4-45ce-b265-5c2513165f67"
+                },
+                {
+                  "key": "pwd",
+                  "value": "learnschool.online",
+                  "type": "text",
+                  "uuid": "12caf05e-b3ef-4699-b368-b7bea4be0850"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/method/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "method",
+                "login"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Profile",
+      "item": [
+        {
+          "name": "Get My Profile",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{auth_token}}",
+                "disabled": true
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/method/employee_self_service.mobile.v1.ess.get_profile",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "method",
+                "employee_self_service.mobile.v1.ess.get_profile"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Profile Picture",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/method/employee_self_service.mobile.v1.ess.update_profile_picture",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "method",
+                "employee_self_service.mobile.v1.ess.update_profile_picture"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Leave",
+      "item": [
+        {
+          "name": "Get Leave Types",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/method/employee_self_service.mobile.v1.ess.get_leave_type",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "method",
+                "employee_self_service.mobile.v1.ess.get_leave_type"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Leave Applications",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/method/employee_self_service.mobile.v1.ess.get_leave_application_list",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "method",
+                "employee_self_service.mobile.v1.ess.get_leave_application_list"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Apply Leave",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{auth_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"leave_type\": \"Casual Leave\",\n  \"from_date\": \"2026-12-01\",\n  \"to_date\": \"2026-12-02\",\n  \"reason\": \"Personal\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/method/employee_self_service.mobile.v1.ess.make_leave_application",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "method",
+                "employee_self_service.mobile.v1.ess.make_leave_application"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Attendance",
+      "item": [
+        {
+          "name": "Attendance Dashboard",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/method/employee_self_service.mobile.v1.ess.get_attendance_details_dashboard",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "method",
+                "employee_self_service.mobile.v1.ess.get_attendance_details_dashboard"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Attendance By Month",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "8baa5890780b55a6bf8d9dbe539d1b0fe539faa4a9c035a2f11e27c6",
+                "disabled": true
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/method/employee_self_service.mobile.v1.ess.get_attendance_list?year=2025&month=1",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "method",
+                "employee_self_service.mobile.v1.ess.get_attendance_list"
+              ],
+              "query": [
+                {
+                  "key": "year",
+                  "value": "2025"
+                },
+                {
+                  "key": "month",
+                  "value": "1"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Salary Slip",
+      "item": [
+        {
+          "name": "Get Salary Slips",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/method/employee_self_service.mobile.v1.ess.get_salary_sllip",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "method",
+                "employee_self_service.mobile.v1.ess.get_salary_sllip"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Download Salary Slip PDF",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/method/employee_self_service.mobile.v1.ess.download_salary_slip?ss_id=SAL-SLIP-0001",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "method",
+                "employee_self_service.mobile.v1.ess.download_salary_slip"
+              ],
+              "query": [
+                {
+                  "key": "ss_id",
+                  "value": "SAL-SLIP-0001"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Dashboard",
+      "item": [
+        {
+          "name": "ESS Dashboard",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/method/employee_self_service.mobile.v1.ess.get_dashboard",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "method",
+                "employee_self_service.mobile.v1.ess.get_dashboard"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Notifications",
+      "item": [
+        {
+          "name": "Notification List",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/method/employee_self_service.mobile.v1.ess.notification_list",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "method",
+                "employee_self_service.mobile.v1.ess.notification_list"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Mark Notification Read",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{auth_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"name\": \"NOTIF-0001\" }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/method/employee_self_service.mobile.v1.ess.mark_read_notification",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "method",
+                "employee_self_service.mobile.v1.ess.mark_read_notification"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Leave Type",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "{{auth_token}}",
+            "disabled": true
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/resource/leave-type",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "resource",
+            "leave-type"
+          ]
+        }
+      },
+      "response": []
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "https://learnschool.online",
+      "type": "string"
+    },
+    {
+      "key": "auth_token",
+      "value": "token e559cde874cdf6d:355b4f41e87a77c",
+      "type": "string"
+    }
+  ]
+}

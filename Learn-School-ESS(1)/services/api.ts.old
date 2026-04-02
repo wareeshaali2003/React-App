@@ -1,0 +1,312 @@
+import axios, { AxiosError, AxiosInstance } from "axios";
+import { isLocalDev } from '../auth/env';
+
+const AUTH_TOKEN_KEY = "erpnext_auth_token"; // localStorage key name
+
+const DEV_ADMIN_TOKEN = "token e559cde874cdf6d:355b4f41e87a77c";
+
+export function getAuthToken(): string | null {
+  return localStorage.getItem(AUTH_TOKEN_KEY);
+}
+
+export function setAuthToken(token: string | null) {
+  if (!token) localStorage.removeItem(AUTH_TOKEN_KEY);
+  else localStorage.setItem(AUTH_TOKEN_KEY, token);
+}
+
+const PROD_HOST = "learnschool.online";
+const isSameDomain = window.location.hostname === PROD_HOST;
+
+// keep BASE_URL without trailing slash
+const BASE_URL = isSameDomain ? "/api/method" : `https://${PROD_HOST}/api/method`;
+const ORIGIN = isSameDomain ? "" : `https://${PROD_HOST}`;
+
+export type ApiResult<T> =
+  | { ok: true; data: T }
+  | { ok: false; error: string; status?: number; raw?: unknown };
+
+const apiClient: AxiosInstance = axios.create({
+  baseURL: BASE_URL,
+  withCredentials: true,
+  headers: { Accept: "application/json" },
+  timeout: 20000,
+});
+
+/** --- CSRF: read from window/meta/cookie (no network call) --- */
+function readCsrfToken(): string | null {
+  const w = window as any;
+
+  const t1 = w?.frappe?.csrf_token;
+  if (typeof t1 === "string" && t1.trim()) return t1;
+
+  const t2 = w?.csrf_token;
+  if (typeof t2 === "string" && t2.trim()) return t2;
+
+  const meta =
+    document.querySelector('meta[name="csrf-token"]') ||
+    document.querySelector('meta[name="csrf_token"]');
+  const t3 = meta?.getAttribute("content");
+  if (typeof t3 === "string" && t3.trim()) return t3;
+
+  // last resort cookie
+  const m = document.cookie.match(/(^|;\s*)csrf_token=([^;]+)/);
+  if (m?.[2]) return decodeURIComponent(m[2]);
+
+  return null;
+}
+
+apiClient.interceptors.request.use((config) => {
+
+  // Attach ERPNext token if present (local dev / token mode)
+  const token = getAuthToken();
+  if (token) {
+    config.headers = config.headers || {};
+    // token may already include "token " prefix; normalize:
+    const value = token.startsWith("token ") ? token : `token ${token}`;
+    (config.headers as any)["Authorization"] = value;
+  }
+
+   // SESSION MODE: CSRF only matters if no token AND method is unsafe
+  const method = (config.method || "get").toLowerCase();
+  const needsCsrf = !token && ["post", "put", "delete", "patch"].includes(method);
+
+  if (needsCsrf) {
+    const csrf = readCsrfToken(); // your existing CSRF reader (window/meta/cookie)
+    if (csrf) (config.headers as any)["X-Frappe-CSRF-Token"] = csrf;
+    (config.headers as any)["X-Requested-With"] = "XMLHttpRequest";
+  }
+
+  return config;
+});
+
+/** Error extraction */
+function extractError(err: unknown): { status?: number; message: string; raw?: unknown } {
+  if (!axios.isAxiosError(err)) return { message: "Unknown error", raw: err };
+
+  const ae = err as AxiosError<any>;
+  const status = ae.response?.status;
+  const data = ae.response?.data;
+
+  const message =
+    (typeof data === "string" ? data : undefined) ||
+    data?.message ||
+    data?.exception ||
+    ae.message ||
+    "Request failed";
+
+  return { status, message: String(message), raw: data ?? ae };
+}
+
+/** Correct unwrapping:
+ * - prefer .data if present (your profile endpoint uses that)
+ * - else use .message (classic Frappe)
+ * - else use whole body
+ */
+function unwrap<T>(body: any): T {
+  if (body && typeof body === "object") {
+    if ("data" in body && body.data !== undefined) return body.data as T;
+    if ("message" in body && body.message !== undefined) return body.message as T;
+  }
+  return body as T;
+}
+
+const handleResponse = async <T>(promise: Promise<any>): Promise<ApiResult<T>> => {
+  try {
+    const res = await promise;
+    return { ok: true, data: unwrap<T>(res.data) };
+  } catch (err) {
+    const { status, message, raw } = extractError(err);
+    console.warn(`[API Error] ${status ?? "Network"}: ${message}`);
+    return { ok: false, status, error: message, raw };
+  }
+};
+
+function asArray<T>(val: any): T[] {
+  return Array.isArray(val) ? (val as T[]) : [];
+}
+
+/** --- Types for directory / leave types --- */
+export type DirectoryEmployee = {
+  name: string; // employee id in ERPNext
+  employee_name: string;
+  designation?: string;
+  department?: string;
+  company_email?: string;
+  cell_number?: string;
+  image?: string;
+};
+
+export async function loginWithCredentials(usr: string, pwd: string) {
+  const data = new FormData();
+  data.append("usr", usr);
+  data.append("pwd", pwd);
+
+  const res = await axios.post(
+    "https://learnschool.online/api/method/login",
+    data,
+    {
+      headers: {
+        Authorization: "token e559cde874cdf6d:355b4f41e87a77c"
+      },
+      withCredentials: true
+    }
+  );
+
+  return res.data;
+}
+
+export const api = {
+
+  setDevToken: (token: string) => {
+    setAuthToken(token.trim());
+  },
+  clearDevToken: () => {
+    setAuthToken(null);
+ },
+  login: async (usr: string, pwd: string) => {
+  const body = new URLSearchParams();
+  body.set("usr", usr);
+  body.set("pwd", pwd);
+
+  return handleResponse<any>(
+    apiClient.post("login", body, {
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    })
+  );
+},
+  // ---------- Session ----------
+  logout: async () => {
+  setAuthToken(null);
+  return handleResponse<any>(apiClient.get("logout"));
+},
+
+  // ---------- Profile ----------
+  getProfile: () =>
+    handleResponse<any>(apiClient.get("employee_self_service.mobile.v1.ess.get_profile")),
+
+  
+
+  updateProfilePicture: (formData: FormData) =>
+    handleResponse<any>(
+      apiClient.post("employee_self_service.mobile.v1.ess.update_profile_picture", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      })
+    ),
+
+  changePassword: (data: { old_password: string; new_password: string }) =>
+    handleResponse<any>(
+      apiClient.post("employee_self_service.mobile.v1.ess.change_password", {
+        data: JSON.stringify(data),
+      })
+    ),
+
+  // ---------- Attendance ----------
+  getAttendanceList: (year: number, month: number) =>
+    handleResponse<any[]>(
+      apiClient.get("employee_self_service.mobile.v1.ess.get_attendance_list", {
+        params: { year, month },
+      })
+    ),
+
+  createLog: (data: any) =>
+    handleResponse<any>(apiClient.post("employee_self_service.mobile.v1.ess.create_employee_log", data)),
+
+  // ---------- Leaves ----------
+  getLeaveSummary: async () => {
+    const res = await handleResponse<any[]>(
+      apiClient.get("employee_self_service.mobile.v1.ess.get_leave_balance_dashboard")
+    );
+    if (!res.ok) return res;
+    return { ok: true as const, data: asArray<any>(res.data) };
+  },
+
+  getLeaveHistory: async () => {
+    const res = await handleResponse<any[]>(
+      apiClient.get("employee_self_service.mobile.v1.ess.get_leave_application_list")
+    );
+    if (!res.ok) return res;
+    return { ok: true as const, data: asArray<any>(res.data) };
+  },
+
+  /** IMPORTANT: match Postman -> raw JSON body, not {data: "..."} */
+  makeLeave: (payload: { leave_type: string; from_date: string; to_date: string; reason?: string }) =>
+    handleResponse<any>(apiClient.post("employee_self_service.mobile.v1.ess.make_leave_application", payload)),
+
+  // Optional betterment: fetch leave types dynamically (uses standard resource API)
+  getLeaveTypes: async (): Promise<ApiResult<string[]>> => {
+    const url = `${ORIGIN}/api/resource/Leave Type`;
+    const res = await handleResponse<any>(
+      apiClient.get(url, {
+        // axios treats full path as absolute; baseURL will not be duplicated
+        params: { fields: JSON.stringify(["name"]) },
+      })
+    );
+
+    if (!res.ok) return res as ApiResult<string[]>;
+    const rows = asArray<any>(res.data?.data ?? res.data);
+    return { ok: true, data: rows.map((r) => r.name).filter(Boolean) };
+  },
+
+  // ---------- Payroll ----------
+  getSalarySlips: async () => {
+    const res = await handleResponse<any[]>(
+      apiClient.get("employee_self_service.mobile.v1.ess.get_salary_sllip")
+    );
+    if (!res.ok) return res;
+    return { ok: true as const, data: asArray<any>(res.data) };
+  },
+
+  getSalarySlipDownloadUrl: (ss_id: string) =>
+    `${BASE_URL}/employee_self_service.mobile.v1.ess.download_salary_slip?ss_id=${encodeURIComponent(ss_id)}`,
+
+  // ---------- Notifications ----------
+  getNotifications: async () => {
+    const res = await handleResponse<any[]>(
+      apiClient.get("employee_self_service.mobile.v1.ess.notification_list")
+    );
+    if (!res.ok) return res;
+    return { ok: true as const, data: asArray<any>(res.data) };
+  },
+
+  markRead: (id: string) =>
+    handleResponse<any>(
+      apiClient.post("employee_self_service.mobile.v1.ess.mark_read_notification", { name: id })
+    ),
+
+  // ---------- Directory (missing feature) ----------
+  // Strategy: try a custom method if you add one later, otherwise fallback to /api/resource/Employee
+  getDirectory: async (search?: string): Promise<ApiResult<DirectoryEmployee[]>> => {
+    // fallback to standard Employee list
+    const url = `${ORIGIN}/api/resource/Employee`;
+
+    const fields = [
+      "name",
+      "employee_name",
+      "designation",
+      "department",
+      "company_email",
+      "cell_number",
+      "image",
+    ];
+
+    const filters = search
+      ? JSON.stringify([["Employee", "employee_name", "like", `%${search}%`]])
+      : undefined;
+
+    const res = await handleResponse<any>(
+      apiClient.get(url, {
+        params: {
+          fields: JSON.stringify(fields),
+          ...(filters ? { filters } : {}),
+          limit_page_length: 50,
+        },
+      })
+    );
+
+    if (!res.ok) return res as ApiResult<DirectoryEmployee[]>;
+    const rows = asArray<DirectoryEmployee>(res.data?.data ?? res.data);
+    return { ok: true, data: rows };
+  },
+};
+
+export default apiClient;
